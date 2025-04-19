@@ -19,12 +19,6 @@ It allows you to safely list block devices, view disk usage, and format partitio
 
 ---
 
-## Screenshots
-
-> (Add screenshots here later if you'd like!)
-
----
-
 ## Usage
 
 ### 🔧 Compile the project
