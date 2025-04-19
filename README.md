@@ -51,11 +51,11 @@ ___
 
 2. Mount/unmount partitions
 
-3. Create/delete partitions (advanced)
+3. Create/delete partitions
 
 4. Better error handling
 
-5. More file system support
+6. Burn ISOs to make bootable drives. (advanced)
 
 6. Add GUI (maybe?)
 
