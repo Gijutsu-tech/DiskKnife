@@ -24,12 +24,12 @@ It allows you to safely list block devices, view disk usage, and format partitio
 ### 🔧 Compile the project
 
 ```
-gcc -o diskknife main.c
+gcc -o DiskKnife DiskKnife.c
 ```
 ### 🚀 Run the tool
 
 ```
-sudo ./diskknife
+sudo ./DiskKnife
 ```
 Root access (sudo) is required for formatting partitions.
 
