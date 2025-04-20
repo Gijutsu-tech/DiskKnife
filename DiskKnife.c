@@ -233,6 +233,7 @@ int formatPart(void)
         }
 
     } while (1);
+    
 }
 
 // Mount partition to the /run/media/user_name/drive_label
