@@ -5,20 +5,24 @@
 int lsblk(void);
 int df(void);
 int formatPart(void);
+int mountPart(char partName[50]);
+int unmountPart(char partName[50]);
+int handleMountUnmount();
 void clr_buffer(void);
 
-int main()
+int main(void)
 {
     int option;
 
-    printf("\n==== DiskKnife ====\nPrecision partitioning and formatting tool\n");
+    printf("\n<==== DiskKnife ====>\nPrecision partitioning and formatting tool\n");
 
     do
     {
         printf("\n1. List block devices\n");
         printf("2. Show disk usage\n");
-        printf("3. Format a partition\n");
-        printf("4. Exit\n");
+        printf("3. Mount/unmount partitions\n");
+        printf("4. Format partitions\n");
+        printf("5. Exit\n");
 
         printf("\nChoose an option: ");
         if (scanf("%d", &option) != 1)
@@ -39,9 +43,13 @@ int main()
         }
         else if (option == 3)
         {
-            formatPart();
+            handleMountUnmount();
         }
         else if (option == 4)
+        {
+            formatPart();
+        }
+        else if (option == 5)
         {
             printf("\nGoodbye!\n");
             break;
@@ -55,6 +63,7 @@ int main()
     return 0;
 }
 
+// List block devices
 int lsblk(void)
 {
     char loopLsblk[2];
@@ -98,6 +107,7 @@ int lsblk(void)
     printf("\n");
 }
 
+// Show all mounted disks and their disk usage
 int df(void)
 {
     char loopDf[2];
@@ -142,6 +152,7 @@ int df(void)
     printf("\n");
 }
 
+// Format partitions with common filesystems
 int formatPart(void)
 {
     clr_buffer();
@@ -170,6 +181,9 @@ int formatPart(void)
             printf("WARNING: Formatting will erase all data on %s. Continue? (yes/no): ", partName);
             clr_buffer();
             fgets(confirm, sizeof(confirm), stdin);
+
+            unmountPart(partName);
+
             if (strncmp(confirm, "yes", 3) == 0)
             {
                 printf("Formatting...\n");
@@ -192,6 +206,9 @@ int formatPart(void)
             printf("WARNING: Formatting will erase all data on %s. Continue? (yes/no): ", partName);
             clr_buffer();
             fgets(confirm, sizeof(confirm), stdin);
+
+            unmountPart(partName);
+
             if (strncmp(confirm, "yes", 3) == 0)
             {
                 printf("Formatting...\n");
@@ -212,9 +229,92 @@ int formatPart(void)
         else
         {
             printf("Invalid option!\n");
-            continue;
+            clr_buffer();
         }
 
+    } while (1);
+}
+
+// Mount partition to the /run/media/user_name/drive_label
+int mountPart(char partName[50])
+{
+    char mountCommand[100];
+    snprintf(mountCommand, sizeof(mountCommand), "udisksctl mount -b %s", partName);
+    int mountResult = system(mountCommand);
+
+    if (mountResult != 0)
+    {
+        printf("Mounting the partition has failed!");
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+// Unmount partition if mounted
+int unmountPart(char partName[50])
+{
+    // Unmount the partition first
+    char unmountCommand[100];
+    snprintf(unmountCommand, sizeof(unmountCommand), "umount %s", partName);
+    int unmountResult = system(unmountCommand);
+
+    if (unmountResult != 0)
+    {
+        return 1;
+    }
+    else
+    {
+        printf("Successfully unmounted %s\n", partName);
+        return 0;
+    }
+}
+
+// Handle mounting and unmounting
+int handleMountUnmount()
+{
+    int mountingOption;
+    char partName[50];
+
+    do
+    {
+        clr_buffer();
+
+        printf("\nEnter the path of the partition (eg., /dev/sdc1): ");
+        fgets(partName, sizeof(partName), stdin);
+        partName[strcspn(partName, "\n")] = 0;
+
+        printf("Availaible options: \n");
+        printf("\t1. Mount the partition.\n");
+        printf("\t2. Unmount the partition.\n");
+
+        printf("Choose an option (1 or 2): ");
+        scanf("%d", &mountingOption);
+
+        if (mountingOption == 1)
+        {
+            mountPart(partName);
+            return 0;
+        }
+        else if (mountingOption == 2)
+        {
+            int unmountPartResult = unmountPart(partName);
+            if (unmountPartResult != 0)
+            {
+                printf("Unmounting the partition has been failed!\n");
+                return 1;
+            }
+            return 0;
+        }
+        else
+        {
+            printf("Invalid option chosen, choose 1 or 2!\n");
+            clr_buffer();
+            return 1;
+        }
+        
     } while (1);
 }
 
