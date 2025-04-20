@@ -63,7 +63,10 @@ ___
 
 ## Contributing
 
-Pull requests are welcome! If you’d like to add features or improve things, feel free to fork and make changes.
+1. Fork the repo
+2. Clone it
+3. Make your changes
+4. Submit a pull request
 
 ___
 
