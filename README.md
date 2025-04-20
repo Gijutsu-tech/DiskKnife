@@ -9,13 +9,13 @@ It allows you to safely list block devices, view disk usage, and format partitio
 
 ## Features
 
-- 🧱 List block devices (`lsblk`)
-- 💾 Show disk usage (`df`)
-- 🧽 Format partitions to:
-  - FAT32
-  - ext4
-- ✅ Confirmation prompts for safety
-- 🧪 Safe to test using loop devices like `/dev/loop0`
+- List block devices (`lsblk`)
+- Show disk usage (`df`)
+- Format partitions to:
+   - FAT32
+   - ext4
+- Confirmation prompts for safety
+- Mounting and unmounting partitions
 
 ---
 
