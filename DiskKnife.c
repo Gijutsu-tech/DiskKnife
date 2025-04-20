@@ -75,7 +75,7 @@ int lsblk(void)
         clr_buffer(); // clear \n buffer
 
         // Run lsblk to list devices
-        int result = system("lsblk -o LABEL,NAME,SIZE,FSTYPE,MOUNTPOINT");
+        int result = system("lsblk -o LABEL,NAME,SIZE,PTTYPE,FSTYPE,MOUNTPOINT");
 
         // Check if the command was successful
         if (result != 0)
