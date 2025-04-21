@@ -15,7 +15,8 @@ It allows you to safely list block devices, view disk usage, and format partitio
    - FAT32
    - ext4
 - Confirmation prompts for safety
-- Mounting and unmounting partitions
+- Mount and unmount partitions
+- Create partition tables
 
 ---
 
