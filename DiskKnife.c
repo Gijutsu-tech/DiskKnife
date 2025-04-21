@@ -23,7 +23,7 @@ int main(void)
         printf("\n1. List block devices\n");
         printf("2. Show disk usage\n");
         printf("3. Mount/unmount partitions\n");
-        printf("4. Create partition table\n");
+        printf("4. Create and modify partition tables\n");
         printf("5. Format partitions\n");
         printf("6. Exit\n");
 
