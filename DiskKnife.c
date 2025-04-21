@@ -7,9 +7,11 @@ int df(void);
 int formatPart(void);
 int mountPart(char partName[50]);
 int unmountPart(char partName[50]);
-int handleMountUnmount();
+int handleMountUnmount(void);
+int createPartTable(void);
 void clr_buffer(void);
 
+// Main function
 int main(void)
 {
     int option;
@@ -21,8 +23,9 @@ int main(void)
         printf("\n1. List block devices\n");
         printf("2. Show disk usage\n");
         printf("3. Mount/unmount partitions\n");
-        printf("4. Format partitions\n");
-        printf("5. Exit\n");
+        printf("4. Create partition table\n");
+        printf("5. Format partitions\n");
+        printf("6. Exit\n");
 
         printf("\nChoose an option: ");
         if (scanf("%d", &option) != 1)
@@ -33,30 +36,34 @@ int main(void)
             continue; // show menu again once
         }
 
-        if (option == 1)
+        switch (option)
         {
+        case 1:
             lsblk();
-        }
-        else if (option == 2)
-        {
-            df();
-        }
-        else if (option == 3)
-        {
-            handleMountUnmount();
-        }
-        else if (option == 4)
-        {
-            formatPart();
-        }
-        else if (option == 5)
-        {
-            printf("\nGoodbye!\n");
             break;
-        }
-        else
-        {
-            printf("\nInvalid input. Please enter a valid number.\n");
+
+        case 2:
+            df();
+            break;
+
+        case 3:
+            handleMountUnmount();
+            break;
+
+        case 4:
+            createPartTable();
+            break;
+
+        case 5:
+            formatPart();
+            break;
+
+        case 6:
+            printf("Goodbye!\n");
+            return 0;
+
+        default:
+            break;
         }
     } while (1);
 
@@ -182,10 +189,9 @@ int formatPart(void)
             clr_buffer();
             fgets(confirm, sizeof(confirm), stdin);
 
-            unmountPart(partName);
-
             if (strncmp(confirm, "yes", 3) == 0)
             {
+                unmountPart(partName);
                 printf("Formatting...\n");
                 sprintf(command, "sudo mkfs.vfat %s", partName);
                 result = system(command);
@@ -207,10 +213,9 @@ int formatPart(void)
             clr_buffer();
             fgets(confirm, sizeof(confirm), stdin);
 
-            unmountPart(partName);
-
             if (strncmp(confirm, "yes", 3) == 0)
             {
+                unmountPart(partName);
                 printf("Formatting...\n");
                 sprintf(command, "sudo mkfs.ext4 %s", partName);
                 result = system(command);
@@ -233,7 +238,6 @@ int formatPart(void)
         }
 
     } while (1);
-    
 }
 
 // Mount partition to the /run/media/user_name/drive_label
@@ -274,7 +278,7 @@ int unmountPart(char partName[50])
 }
 
 // Handle mounting and unmounting
-int handleMountUnmount()
+int handleMountUnmount(void)
 {
     int mountingOption;
     char partName[50];
@@ -315,7 +319,62 @@ int handleMountUnmount()
             clr_buffer();
             return 1;
         }
-        
+
+    } while (1);
+}
+
+// Create a partition table
+int createPartTable(void)
+{
+    int tableType;
+    char devicePath[50];
+    char partTableCommand[100];
+    char confirm[4];
+    do
+    {
+        clr_buffer();
+
+        printf("\nEnter the path of the device (eg., /dev/sdc): ");
+        fgets(devicePath, sizeof(devicePath), stdin);
+        devicePath[strcspn(devicePath, "\n")] = 0;
+
+        printf("Availaible options: \n");
+        printf("\t1. MBR (DOS)\n");
+        printf("\t2. GPT\n");
+
+        printf("Choose an option (1 or 2): ");
+        scanf("%d", &tableType);
+
+        printf("WARNING: Creating a partition table will erase all data on %s. Continue? (yes/no): ", devicePath);
+        clr_buffer();
+        fgets(confirm, sizeof(confirm), stdin);
+
+        if (strncmp(confirm, "yes", 3) == 0)
+        {
+            if (tableType == 1)
+            {
+                snprintf(partTableCommand, sizeof(partTableCommand), "sudo parted %s mklabel msdos", devicePath);
+                system(partTableCommand);
+                return 0;
+            }
+            else if (tableType == 2)
+            {
+                snprintf(partTableCommand, sizeof(partTableCommand), "sudo parted %s mklabel gpt", devicePath);
+                system(partTableCommand);
+                return 0;
+            }
+            else
+            {
+                printf("Invalid option chosen, choose 1 or 2!\n");
+                clr_buffer();
+                return 1;
+            }
+        }
+        else
+        {
+            printf("Aborted.");
+            return 1;
+        }
     } while (1);
 }
 
