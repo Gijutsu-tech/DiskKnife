@@ -50,15 +50,13 @@ ___
 
 1. NTFS formatting support (check for ntfs-3g)
 
-2. Mount/unmount partitions
+2. Create/delete partitions
 
-3. Create/delete partitions
+3. Better error handling
 
-4. Better error handling
+4. Burn ISOs to make bootable drives. (advanced)
 
-6. Burn ISOs to make bootable drives. (advanced)
-
-6. Add GUI (maybe?)
+5. Add GUI (maybe?)
 
 ___
 
