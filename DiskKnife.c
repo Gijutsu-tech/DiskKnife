@@ -3,12 +3,18 @@
 #include <string.h>
 
 int lsblk(void);
+
 int df(void);
-int formatPart(void);
-int mountPart(char partName[50]);
-int unmountPart(char partName[50]);
+
+int getFormatPartInput(void);
+int formatPart(char partPath[50], int fileSystem);
+
+int mountPart(char partPath[50]);
+int unmountPart(char partPath[50]);
 int handleMountUnmount(void);
-int createPartTable(void);
+
+int getPartTableInput(void);
+int createPartTable(int tableType, char devicePath[50]);
 void clr_buffer(void);
 
 // Main function
@@ -51,11 +57,11 @@ int main(void)
             break;
 
         case 4:
-            createPartTable();
+            getPartTableInput();
             break;
 
         case 5:
-            formatPart();
+            getFormatPartInput();
             break;
 
         case 6:
@@ -159,92 +165,81 @@ int df(void)
     printf("\n");
 }
 
-// Format partitions with common filesystems
-int formatPart(void)
+// Get the input for formatPart()
+int getFormatPartInput(void)
 {
     clr_buffer();
 
-    char partName[50];
+    char partPath[50];
     int fileSystem;
     char confirm[4];
+
+    printf("Enter the path of the partition (eg., /dev/sdc1): ");
+    fgets(partPath, sizeof(partPath), stdin);
+    partPath[strcspn(partPath, "\n")] = 0;
+
+    printf("Availaible filesystem types: \n");
+    printf("\t1. FAT32\n");
+    printf("\t2. ext4\n");
+
+    printf("Choose the filesystem for the partition from the options listed above: ");
+    scanf("%d", &fileSystem);
+
+    printf("WARNING: Formatting will erase all data on %s. Continue? (yes/no): ", partPath);
+    clr_buffer();
+    fgets(confirm, sizeof(confirm), stdin);
+
+    if (strncmp(confirm, "yes", 3) == 0)
+    {
+        formatPart(partPath, fileSystem);
+    }
+    else
+    {
+        printf("Aborted formatting.\n");
+    }
+}
+
+// Format partitions with available filesystems
+int formatPart(char partPath[50], int fileSystem)
+{
     char command[100];
     int result;
 
-    printf("Enter the path of the partition (eg., /dev/sdc1): ");
-    fgets(partName, sizeof(partName), stdin);
-    partName[strcspn(partName, "\n")] = 0;
-
-    do
+    if (fileSystem == 1)
     {
-        printf("Availaible filesystem types: \n");
-        printf("\t1. FAT32\n");
-        printf("\t2. ext4\n");
-
-        printf("Choose the filesystem for the partition from the options listed above: ");
-        scanf("%d", &fileSystem);
-
-        if (fileSystem == 1)
+        unmountPart(partPath);
+        printf("Formatting...\n");
+        sprintf(command, "sudo mkfs.vfat %s", partPath);
+        result = system(command);
+        if (result == 0)
         {
-            printf("WARNING: Formatting will erase all data on %s. Continue? (yes/no): ", partName);
-            clr_buffer();
-            fgets(confirm, sizeof(confirm), stdin);
-
-            if (strncmp(confirm, "yes", 3) == 0)
-            {
-                unmountPart(partName);
-                printf("Formatting...\n");
-                sprintf(command, "sudo mkfs.vfat %s", partName);
-                result = system(command);
-                if (result == 0)
-                {
-                    printf("Formatted %s to FAT32 filesystem.\n", partName);
-                }
-                break;
-            }
-            else
-            {
-                printf("Aborted formatting.\n");
-                break;
-            }
+            printf("Formatted %s to FAT32 filesystem.\n", partPath);
         }
-        else if (fileSystem == 2)
+    }
+    else if (fileSystem == 2)
+    {
+
+        unmountPart(partPath);
+        printf("Formatting...\n");
+        sprintf(command, "sudo mkfs.ext4 %s", partPath);
+        result = system(command);
+        if (result == 0)
         {
-            printf("WARNING: Formatting will erase all data on %s. Continue? (yes/no): ", partName);
-            clr_buffer();
-            fgets(confirm, sizeof(confirm), stdin);
-
-            if (strncmp(confirm, "yes", 3) == 0)
-            {
-                unmountPart(partName);
-                printf("Formatting...\n");
-                sprintf(command, "sudo mkfs.ext4 %s", partName);
-                result = system(command);
-                if (result == 0)
-                {
-                    printf("Formatted %s to ext4 filesystem.\n", partName);
-                }
-                break;
-            }
-            else
-            {
-                printf("Aborted formatting.\n");
-                break;
-            }
+            printf("Formatted %s to ext4 filesystem.\n", partPath);
         }
-        else
-        {
-            printf("Invalid option!\n");
-            clr_buffer();
-        }
-
-    } while (1);
+    }
+    else
+    {
+        printf("Invalid option!\n");
+        clr_buffer();
+    }
 }
 
 // Mount partition to the /run/media/user_name/drive_label
-int mountPart(char partName[50])
+int mountPart(char partPath[50])
 {
     char mountCommand[100];
-    snprintf(mountCommand, sizeof(mountCommand), "udisksctl mount -b %s", partName);
+    snprintf(mountCommand, sizeof(mountCommand), "udisksctl mount -b %s", partPath);
     int mountResult = system(mountCommand);
 
     if (mountResult != 0)
@@ -259,11 +254,11 @@ int mountPart(char partName[50])
 }
 
 // Unmount partition if mounted
-int unmountPart(char partName[50])
+int unmountPart(char partPath[50])
 {
     // Unmount the partition first
     char unmountCommand[100];
-    snprintf(unmountCommand, sizeof(unmountCommand), "umount %s", partName);
+    snprintf(unmountCommand, sizeof(unmountCommand), "umount %s", partPath);
     int unmountResult = system(unmountCommand);
 
     if (unmountResult != 0)
@@ -272,7 +267,7 @@ int unmountPart(char partName[50])
     }
     else
     {
-        printf("Successfully unmounted %s\n", partName);
+        printf("Successfully unmounted %s\n", partPath);
         return 0;
     }
 }
@@ -281,15 +276,15 @@ int unmountPart(char partName[50])
 int handleMountUnmount(void)
 {
     int mountingOption;
-    char partName[50];
+    char partPath[50];
 
     do
     {
         clr_buffer();
 
         printf("\nEnter the path of the partition (eg., /dev/sdc1): ");
-        fgets(partName, sizeof(partName), stdin);
-        partName[strcspn(partName, "\n")] = 0;
+        fgets(partPath, sizeof(partPath), stdin);
+        partPath[strcspn(partPath, "\n")] = 0;
 
         printf("Availaible options: \n");
         printf("\t1. Mount the partition.\n");
@@ -300,12 +295,12 @@ int handleMountUnmount(void)
 
         if (mountingOption == 1)
         {
-            mountPart(partName);
+            mountPart(partPath);
             return 0;
         }
         else if (mountingOption == 2)
         {
-            int unmountPartResult = unmountPart(partName);
+            int unmountPartResult = unmountPart(partPath);
             if (unmountPartResult != 0)
             {
                 printf("Unmounting the partition has been failed!\n");
@@ -323,12 +318,11 @@ int handleMountUnmount(void)
     } while (1);
 }
 
-// Create a partition table
-int createPartTable(void)
+// Get input for createPartTable()
+int getPartTableInput(void)
 {
     int tableType;
     char devicePath[50];
-    char partTableCommand[100];
     char confirm[4];
     do
     {
@@ -351,24 +345,7 @@ int createPartTable(void)
 
         if (strncmp(confirm, "yes", 3) == 0)
         {
-            if (tableType == 1)
-            {
-                snprintf(partTableCommand, sizeof(partTableCommand), "sudo parted %s mklabel msdos", devicePath);
-                system(partTableCommand);
-                return 0;
-            }
-            else if (tableType == 2)
-            {
-                snprintf(partTableCommand, sizeof(partTableCommand), "sudo parted %s mklabel gpt", devicePath);
-                system(partTableCommand);
-                return 0;
-            }
-            else
-            {
-                printf("Invalid option chosen, choose 1 or 2!\n");
-                clr_buffer();
-                return 1;
-            }
+            createPartTable(tableType, devicePath);
         }
         else
         {
@@ -376,6 +353,29 @@ int createPartTable(void)
             return 1;
         }
     } while (1);
+}
+
+// Create a partition table
+int createPartTable(int tableType, char devicePath[50]){
+    char partTableCommand[100];
+    if (tableType == 1)
+    {
+        snprintf(partTableCommand, sizeof(partTableCommand), "sudo parted %s mklabel msdos", devicePath);
+        system(partTableCommand);
+        return 0;
+    }
+    else if (tableType == 2)
+    {
+        snprintf(partTableCommand, sizeof(partTableCommand), "sudo parted %s mklabel gpt", devicePath);
+        system(partTableCommand);
+        return 0;
+    }
+    else
+    {
+        printf("Invalid option chosen, choose 1 or 2!\n");
+        clr_buffer();
+        return 1;
+    }
 }
 
 // Function to clear the \n buffer
