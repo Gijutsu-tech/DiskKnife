@@ -11,19 +11,29 @@ Designed to be beginner-friendly yet powerful, it helps you list block devices, 
 
 ## 💡 Features
 
-- 🧾 List block devices (via `lsblk`)
-- 📊 Show disk usage (via `df`)
-- 💽 Format partitions to:
+- List block devices (via `lsblk`)
+- Show disk usage (via `df`)
+- Format partitions to:
   - `FAT32`
   - `ext4`
   - `NTFS`
-- 🔧 Create partition tables (MBR/GPT)
-- ➕ Create and delete partitions
-- 📁 Mount and unmount partitions safely
-- 🔥 **Burn Windows ISOs to USB (UEFI-only)**  
+- Create partition tables (MBR/GPT)
+  
+- Create and delete partitions
+  
+- Mount and unmount partitions safely
+  
+- **Burn Windows ISOs to USB (UEFI-only)**
+    The Windows ISO burning feature:
+    Splits the USB into FAT32 (for boot files) + NTFS (for big files like install.wim)
+    Mounts the ISO using a loop device
+    Copies everything using rsync, logs progress
+    Installs the UEFI bootloader (bootx64.efi) to FAT32
    *Split-WIM compatible with dual FAT32+NTFS partitions!*
-- ✅ Confirmation prompts to prevent mistakes
-- 🤖 Modular structure with clean, readable code
+
+- Confirmation prompts to prevent mistakes
+  
+- Modular structure with clean, readable code
 
 ---
 
