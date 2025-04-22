@@ -16,7 +16,7 @@ Designed to be beginner-friendly yet powerful, it helps you list block devices, 
 - 💽 Format partitions to:
   - `FAT32`
   - `ext4`
-  - `NTFS` *(requires `ntfs-3g`)*
+  - `NTFS`
 - 🔧 Create partition tables (MBR/GPT)
 - ➕ Create and delete partitions
 - 📁 Mount and unmount partitions safely
