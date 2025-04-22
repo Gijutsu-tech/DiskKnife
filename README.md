@@ -1,76 +1,85 @@
-# DiskKnife 🔪
 
-DiskKnife is a simple, command-line based partition management tool written in C.  
-It allows you to safely list block devices, view disk usage, and format partitions with supported filesystems — all in a user-friendly menu-driven interface.
+# DiskKnife 🔪  
+*A clean cut through partition management.*
 
-> ⚠️ This tool is intended for educational purposes and should be used with caution. Formatting or modifying real partitions can result in data loss.
+DiskKnife is a sleek, menu-driven command-line partition management tool written in pure C 🧠⚙️  
+Designed to be beginner-friendly yet powerful, it helps you list block devices, view disk usage, format partitions, and more — right from your terminal.
 
----
-
-## Features
-
-- List block devices (`lsblk`)
-- Show disk usage (`df`)
-- Format partitions to:
-   - FAT32
-   - ext4
-- Confirmation prompts for safety
-- Mount and unmount partitions
-- Create partition tables
+> ⚠️ **Warning:** This tool is powerful. Use with caution. Always double-check before formatting or modifying real partitions!
 
 ---
 
-## Usage
+## 💡 Features
 
-### 🔧 Compile the project
+- 🧾 List block devices (via `lsblk`)
+- 📊 Show disk usage (via `df`)
+- 💽 Format partitions to:
+  - `FAT32`
+  - `ext4`
+  - `NTFS` *(requires `ntfs-3g`)*
+- 🔧 Create partition tables (MBR/GPT)
+- ➕ Create and delete partitions
+- 📁 Mount and unmount partitions safely
+- 🔥 **Burn Windows ISOs to USB (UEFI-only)**  
+   *Split-WIM compatible with dual FAT32+NTFS partitions!*
+- ✅ Confirmation prompts to prevent mistakes
+- 🤖 Modular structure with clean, readable code
 
-```
+---
+
+## 🛠️ Usage
+
+### 🧪 Compile
+```bash
 gcc -o DiskKnife DiskKnife.c
 ```
-### 🚀 Run the tool
 
-```
+### 🚀 Run
+```bash
 sudo ./DiskKnife
 ```
-Root access (sudo) is required for formatting partitions.
+> ⚙️ Root access is required for formatting, mounting, and burning ISOs.
 
-___
+---
 
-## Notes
+## 🧪 Safe Testing with Loop Devices
 
-To avoid bricking or damaging real devices, you can test with loop devices:
-```
+Avoid risking real drives. You can test on virtual block devices:
+
+```bash
 dd if=/dev/zero of=disk.img bs=1M count=100
 losetup /dev/loop0 disk.img
 ```
 
-___
+Perfect for experimenting without frying your actual setup 🔥
 
-## Roadmap
+---
 
-1. NTFS formatting support (check for ntfs-3g)
+## 🔮 Roadmap
 
-2. Create/delete partitions
+- [x] NTFS support (`mkntfs` via `ntfs-3g`)
+- [x] Partition table creation (MBR/GPT)
+- [x] Basic partition creation
+- [x] **🔥 Windows ISO burning** *(FAT32+NTFS dual partition, UEFI only)*
+- [ ] Improved error handling/logging
+- [ ] ISO burning UI enhancements
+- [ ] Maybe a minimal GUI in the far future
 
-3. Better error handling
+---
 
-4. Burn ISOs to make bootable drives. (advanced)
+## 🤝 Contributing
 
-5. Add GUI (maybe?)
+Wanna join the rebellion? Fork it, clone it, tweak it, and send a PR.  
+Good code, good vibes only 🖤
 
-___
+```bash
+git clone https://github.com/Gijutsu-tech/DiskKnife.git
+```
 
-## Contributing
+---
 
-1. Fork the repo
-2. Clone it
-3. Make your changes
-4. Submit a pull request
+## 🧑‍💻 Author
 
-___
-
-## Author
-
-Made with ❤️ by Gijutsu-tech!
-
-____
+Made with 💜, Linux, and *a whole lotta printf()*  
+By **[Gijutsu-tech](https://github.com/Gijutsu-tech)**  
+_“A PC is like an AC. It's useless if you open Windows. - The Arch User”_
