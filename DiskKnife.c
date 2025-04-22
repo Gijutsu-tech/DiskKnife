@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define FORMAT_FAT32 1
+#define FORMAT_EXT4 2
+#define FORMAT_NTFS 3
+
 int lsblk(void);
 
 int df(void);
@@ -17,6 +21,9 @@ int getPartTableInput(void);
 int createPartTable(int tableType, char devicePath[50]);
 void clr_buffer(void);
 
+int getBurnIsoInput(void);
+int burnIso(char drivePath[50], char isoPath[100]);
+
 // Main function
 int main(void)
 {
@@ -31,7 +38,8 @@ int main(void)
         printf("3. Mount/unmount partitions\n");
         printf("4. Create and modify partition tables\n");
         printf("5. Format partitions\n");
-        printf("6. Exit\n");
+        printf("6. Burn windows ISO\n");
+        printf("7. Exit\n");
 
         printf("\nChoose an option: ");
         if (scanf("%d", &option) != 1)
@@ -65,6 +73,10 @@ int main(void)
             break;
 
         case 6:
+            getBurnIsoInput();
+            break;
+
+        case 7:
             printf("Goodbye!\n");
             return 0;
 
@@ -181,6 +193,7 @@ int getFormatPartInput(void)
     printf("Availaible filesystem types: \n");
     printf("\t1. FAT32\n");
     printf("\t2. ext4\n");
+    printf("\t3. NTFS\n");
 
     printf("Choose the filesystem for the partition from the options listed above: ");
     scanf("%d", &fileSystem);
@@ -209,7 +222,7 @@ int formatPart(char partPath[50], int fileSystem)
     {
         unmountPart(partPath);
         printf("Formatting...\n");
-        sprintf(command, "sudo mkfs.vfat %s", partPath);
+        sprintf(command, "sudo mkfs.vfat -F 32 %s", partPath);
         result = system(command);
         if (result == 0)
         {
@@ -226,6 +239,17 @@ int formatPart(char partPath[50], int fileSystem)
         if (result == 0)
         {
             printf("Formatted %s to ext4 filesystem.\n", partPath);
+        }
+    }
+    else if (fileSystem == 3)
+    {
+        unmountPart(partPath);
+        printf("Formatting...");
+        sprintf(command, "sudo mkntfs --fast %s 2>/dev/null", partPath);
+        result = system(command);
+        if (result == 0)
+        {
+            printf("Formatted %s to ntfs filesystem.\n", partPath);
         }
     }
     else
@@ -258,7 +282,7 @@ int unmountPart(char partPath[50])
 {
     // Unmount the partition first
     char unmountCommand[100];
-    snprintf(unmountCommand, sizeof(unmountCommand), "umount %s", partPath);
+    snprintf(unmountCommand, sizeof(unmountCommand), "sudo umount %s", partPath);
     int unmountResult = system(unmountCommand);
 
     if (unmountResult != 0)
@@ -356,7 +380,8 @@ int getPartTableInput(void)
 }
 
 // Create a partition table
-int createPartTable(int tableType, char devicePath[50]){
+int createPartTable(int tableType, char devicePath[50])
+{
     char partTableCommand[100];
     if (tableType == 1)
     {
@@ -376,6 +401,104 @@ int createPartTable(int tableType, char devicePath[50]){
         clr_buffer();
         return 1;
     }
+}
+
+int getBurnIsoInput(void)
+{
+    clr_buffer();
+
+    char drivePath[50];
+    char isoPath[100];
+
+    printf("Enter the path of the USB drive: ");
+    fgets(drivePath, sizeof(drivePath), stdin);
+
+    drivePath[strcspn(drivePath, "\n")] = 0;
+
+    printf("Enter the path of the ISO file (*Path length MUST be lsser than 100 characters*): ");
+    fgets(isoPath, sizeof(isoPath), stdin);
+
+    isoPath[strcspn(isoPath, "\n")] = 0;
+
+    burnIso(drivePath, isoPath);
+}
+
+// Burn windows ISOs!!!!
+int burnIso(char drivePath[50], char isoPath[100])
+{
+    char cmd[512];
+    char part1[51];
+    char part2[51];
+
+    printf("The drive is %s and iso path is %s\n", drivePath, isoPath);
+
+    // Create partition table (2 = GPT)
+    printf("[1/5] : Creating partition table...\n");
+    createPartTable(2, drivePath);
+
+    // Create EFI (FAT32) and system (NTFS) partitions with proper alignment
+    printf("[2/5] : Creating partitions...\n");
+    snprintf(cmd, sizeof(cmd), "sudo parted %s --align optimal mkpart ESP fat32 1MiB 101MiB", drivePath);
+    system(cmd);
+    snprintf(cmd, sizeof(cmd), "sudo parted %s set 1 boot on", drivePath);
+    system(cmd);
+    snprintf(cmd, sizeof(cmd), "sudo parted %s set 1 esp on", drivePath);
+    system(cmd);
+
+    snprintf(cmd, sizeof(cmd), "sudo parted %s --align optimal mkpart primary ntfs 101MiB 100%%", drivePath);
+    system(cmd);
+
+    // Refresh partition table
+    system("sudo partprobe");
+
+    // Define partition paths
+    if (strncmp(drivePath, "/dev/loop", 9) == 0)
+    {
+        snprintf(part1, sizeof(part1), "%sp1", drivePath);
+        snprintf(part2, sizeof(part2), "%sp2", drivePath);
+    }
+    else
+    {
+        snprintf(part1, sizeof(part1), "%s1", drivePath);
+        snprintf(part2, sizeof(part2), "%s2", drivePath);
+    }
+
+    // Create mount directories
+    system("sudo mkdir -p /mnt/efi");
+    system("sudo mkdir -p /mnt/windows");
+
+    // Format partitions
+    printf("[3/5] : Formatting partitions...\n");
+    formatPart(part1, FORMAT_FAT32);  // Format EFI partition as FAT32
+    formatPart(part2, FORMAT_NTFS);  // Format Windows partition as NTFS
+
+
+    // Mount partitions
+    printf("[4/5] : Mounting partitions...\n");
+    snprintf(cmd, sizeof(cmd), "sudo mount %s /mnt/efi", part1);
+    system(cmd);
+    snprintf(cmd, sizeof(cmd), "sudo mount %s /mnt/windows", part2);
+    system(cmd);
+    
+    // Mount the ISO
+    system("sudo mkdir -p /mnt/iso");
+    snprintf(cmd, sizeof(cmd), "sudo mount -o loop %s /mnt/iso", isoPath);
+    system(cmd);
+
+    // Copy files from ISO to the NTFS partition
+    printf("[5/5] : Burning the ISO...\n");
+    system("rsync -ah --progress /mnt/iso/* /mnt/windows");
+
+    // Copy the bootloader to the EFI partition
+    system("sudo mkdir -p /mnt/efi/BOOT");
+    system("rsync -ah --progress /mnt/windows/efi/boot/bootx64.efi /mnt/efi/BOOT/");
+
+    // Unmount partitions
+    system("umount /mnt/iso");
+    system("umount /mnt/efi");
+    system("umount /mnt/windows");
+
+    return 0;
 }
 
 // Function to clear the \n buffer
