@@ -210,6 +210,8 @@ int getFormatPartInput(void)
     {
         printf("Aborted formatting.\n");
     }
+
+  return 0;
 }
 
 // Format partitions with available filesystems
@@ -409,6 +411,10 @@ int getBurnIsoInput(void)
 
     char drivePath[50];
     char isoPath[100];
+    char directory[100] = "/path/to/iso/directory";
+
+    printf("Scanning for ISO files in %s...\n", directory);
+    listIsoFiles(directory);    printf("Enter the path of the USB drive: ");
 
     printf("Enter the path of the USB drive: ");
     fgets(drivePath, sizeof(drivePath), stdin);
@@ -420,7 +426,9 @@ int getBurnIsoInput(void)
 
     isoPath[strcspn(isoPath, "\n")] = 0;
 
+  
     burnIso(drivePath, isoPath);
+    return 0;
 }
 
 // Burn windows ISOs!!!!
@@ -506,4 +514,33 @@ void clr_buffer(void)
 {
     while (getchar() != '\n')
         ; // Clear out the buffer
+}
+
+// List ISO files in a directory
+void listIsoFiles(const char *directory)
+{
+    struct dirent *entry;
+    DIR *dp = opendir(directory);
+
+    if (dp == NULL)
+    {
+        perror("opendir");
+        return;
+    }
+
+    printf("Available ISO files in %s:\n", directory);
+    while ((entry = readdir(dp)))
+    {
+        if (strstr(entry->d_name, ".iso"))
+        {
+            printf("- %s\n", entry->d_name);
+        }
+    }
+    closedir(dp);
+}
+// Lists avaible partitons before asking for user input
+void listAvailablePartitions(void)
+{
+    printf("Available partitions:\n");
+    system("lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT");
 }
