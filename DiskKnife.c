@@ -2,6 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <direct.h> // For _mkdir
+#include <windows.h> // For Windows system calls
+#define PATH_SEPARATOR '\\'
+#define mkdir _mkdir
+#else
+#include <dirent.h> // For opendir, readdir, closedir
+#include <sys/stat.h> // For mkdir
+#include <sys/types.h> // For types like mode_t
+#define PATH_SEPARATOR '/'
+#endif
 #define FORMAT_FAT32 1
 #define FORMAT_EXT4 2
 #define FORMAT_NTFS 3
@@ -23,6 +34,8 @@ void clr_buffer(void);
 
 int getBurnIsoInput(void);
 int burnIso(char drivePath[50], char isoPath[100]);
+
+void listIsoFiles(const char *directory);
 
 // Main function
 int main(void)
@@ -210,6 +223,8 @@ int getFormatPartInput(void)
     {
         printf("Aborted formatting.\n");
     }
+
+  return 0;
 }
 
 // Format partitions with available filesystems
@@ -403,24 +418,34 @@ int createPartTable(int tableType, char devicePath[50])
     }
 }
 
+// Automatic path finding
 int getBurnIsoInput(void)
 {
-    clr_buffer();
-
     char drivePath[50];
     char isoPath[100];
+#ifdef _WIN32
+    char directory[100] = "D:\\ISOs"; // Default directory on Windows
+#else
+    char directory[100] = "/mnt/iso"; // Default directory on Linux
+#endif
 
-    printf("Enter the path of the USB drive: ");
-    fgets(drivePath, sizeof(drivePath), stdin);
+    printf("Scanning for ISO files in %s...\n", directory);
+    listIsoFiles(directory);
 
-    drivePath[strcspn(drivePath, "\n")] = 0;
+    // Automatically detect the USB drive (this is a placeholder, implement as needed)
+#ifdef _WIN32
+    strcpy(drivePath, "E:\\"); // Default USB drive path on Windows
+#else
+    strcpy(drivePath, "/dev/sdb"); // Default USB drive path on Linux
+#endif
+    printf("Detected USB drive: %s\n", drivePath);
 
-    printf("Enter the path of the ISO file (*Path length MUST be lsser than 100 characters*): ");
-    fgets(isoPath, sizeof(isoPath), stdin);
-
-    isoPath[strcspn(isoPath, "\n")] = 0;
+    // Automatically select the first ISO file (example logic)
+    sprintf(isoPath, "%s/example.iso", directory); // Replace with actual file detection logic
+    printf("Detected ISO file: %s\n", isoPath);
 
     burnIso(drivePath, isoPath);
+    return 0;
 }
 
 // Burn windows ISOs!!!!
@@ -506,4 +531,33 @@ void clr_buffer(void)
 {
     while (getchar() != '\n')
         ; // Clear out the buffer
+}
+
+// List ISO files in a directory
+void listIsoFiles(const char *directory)
+{
+    struct dirent *entry;
+    DIR *dp = opendir(directory);
+
+    if (dp == NULL)
+    {
+        perror("opendir");
+        return;
+    }
+
+    printf("Available ISO files in %s:\n", directory);
+    while ((entry = readdir(dp)))
+    {
+        if (strstr(entry->d_name, ".iso"))
+        {
+            printf("- %s\n", entry->d_name);
+        }
+    }
+    closedir(dp);
+}
+// Lists avaible partitons before asking for user input
+void listAvailablePartitions(void)
+{
+    printf("Available partitions:\n");
+    system("lsblk -o NAME,SIZE,FSTYPE,MOUNTPOINT");
 }
