@@ -1,0 +1,2 @@
+# To ignore executable files in bin folder
+**/bin/
